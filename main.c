@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+unsigned short table1[0x1000000];
+
 int main(int argc, char const *argv[])
 {
     if(argc != 3) {
@@ -16,7 +18,7 @@ int main(int argc, char const *argv[])
         printIOExplanationError(errorID);
     }
 
-    
+
 
     return 0;
 }
