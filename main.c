@@ -2,15 +2,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tables_engine.h"
+#include "io.h"
+#include "utils.h"
 #include <sys/time.h>
+#include <time.h>
 #include <stdint.h>
-#include <unistd.h>
+#include <inttypes.h>
 
-unsigned short table1[0x1000000];
+#include <arpa/inet.h>
 
-int currentIndex = 0;
+table_controller_t tableController;
 
-int main(int argc, char const *argv[])
+uint32_t *prefix;
+int *prefixLength;     
+int *outInterface;
+
+
+int main(int argc, char *argv[])
 {
     if (argc != 3) {
         fprintf(stderr, "Incorrect number of arguments\n\n");
@@ -18,46 +26,46 @@ int main(int argc, char const *argv[])
     }
     int errorID;
     
-    if (errorID = initializeIO(argv[1], argv[1]) != 0) {
+    if ((errorID = initializeIO(argv[1], argv[2])) != 0) {
         printIOExplanationError(errorID);
     }
 
-    unsigned short staticTable[0x1000000];
-    for (int i = 0; i < 0x1000000; i++) staticTable[i] = 0;
+    createTable(&tableController);
     
-    // Declare temporal variables
-    uint32_t *prefix;
-    int *prefixLength;
-    int *outInterface;
-    table_controller_t *tableController;
+    prefix = calloc(1, sizeof(int));
+    prefixLength = calloc(1, sizeof(int));
+    outInterface = calloc(1, sizeof(int));
 
-    // Init controller
-    *tableController->staticTable = staticTable;
-    *tableController->dynamicTable = calloc(1, sizeof(unsigned short));
-    tableController->dynamicExtensions = 0;
-
-    // memset(tableController->dynamicExtensions, 0, 1);
-
-    while (errorID = readFIBLine(prefix, prefixLength, outInterface) == 0) { // while no error or EOF
-        fillTable(tableController, prefix, prefixLength, outInterface);
+    
+    while ((errorID = readFIBLine(prefix, prefixLength, outInterface)) == 0) { // while no error or EOF
+        // printf("%s\n",inet_ntoa(*(struct in_addr *)prefix));
+        fillTable(&tableController, prefix, prefixLength, outInterface);
     }
 
-    uint32_t *lookUpPrefix;
-    int *accessedTables;
-    struct timespec *start, *end; // https://www.geeksforgeeks.org/measure-execution-time-with-high-precision-in-c-c/
+    uint32_t *lookUpPrefix = calloc(1, sizeof(int));
+    int *accessedTables = calloc(1, sizeof(int));
 
-    while (errorID = readInputPacketFileLine(lookUpInterface) == 0) {
+    int processedCounter = 0;
+    int accessesCounter = 0;
+    double timeCounter = 0.0;
 
-        clock_gettime(_SC_MONOTONIC_CLOCK, &start);
-        int interface = lookUpInterface(tableController, lookUpPrefix, accessedTables);
-        clock_gettime(_SC_MONOTONIC_CLOCK, &end);
+    struct timespec start, end; // https://www.geeksforgeeks.org/measure-execution-time-with-high-precision-in-c-c/
 
-        double *searchingTime;
-        *searchingTime = (end->tv_sec - start->tv_sec) * 1e9;
-        *searchingTime = (*searchingTime + (end->tv_nsec - start->tv_nsec)) * 1e-9;
+    while ((errorID = readInputPacketFileLine(lookUpPrefix)) == 0) {
+        
+        clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+        int interface = lookUpInterface(&tableController, lookUpPrefix, accessedTables);
+        clock_gettime(CLOCK_MONOTONIC_RAW, &end);
 
-        printOutputLine(lookUpPrefix, interface, start, end, searchingTime, accessedTables);
-        freeAllResources();
+        double *searchingTime = calloc(1, sizeof(double));  
+        printOutputLine(*lookUpPrefix, interface, &start, &end, searchingTime, *accessedTables);
+        processedCounter++;
+        accessesCounter += *accessedTables;
+        timeCounter += *searchingTime;
     }
+        // printf("Accesses counter %d\n", accessesCounter);
+
+    printSummary(processedCounter, (double) ((double) accessesCounter/(double) processedCounter), (double) (timeCounter/processedCounter));
+    
     return 0;
 }

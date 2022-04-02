@@ -1,21 +1,22 @@
-#include "io.h"
-#include "ipv4_engine.h"
-#include <stdint.h>
-#include <math.h>
 #include "tables_engine.h"
+#include "io.h"
+#include <math.h>
+#include <stdint.h>
 
 // https://stackoverflow.com/questions/1810083/c-pointers-pointing-to-an-array-of-fixed-size
 
 int fillTable(table_controller_t *tableController, uint32_t *prefix, int *prefixLength, int *outInterface)
 {
     int fillNpos = 0;
-    if (*prefix <= 24) {
+    if (*prefixLength <= 24) {
         fillNpos = pow(2, 24 - *prefixLength);
+        
         for (int i = 0; i < fillNpos; i++) {
             // >> displaces 8 positions a binary number to the right, filling with 0s the left part
             // we want the first 24 bits of the 32 total bits of the IP, so we discard the last 8
-            tableController->staticTable[*prefix >> 8 + i] = *outInterface;
+            tableController->staticTable[(*prefix >> 8) + i] = *outInterface;
         }
+        
     } else {
         fillNpos = pow(2, 32 - *prefixLength);
         if (tableController->staticTable[*prefix >> 8] >> 15 == 0) {
@@ -58,12 +59,22 @@ int fillTable(table_controller_t *tableController, uint32_t *prefix, int *prefix
 int lookUpInterface(table_controller_t *tableController, uint32_t *lookUpPrefix, int *accessedTables)
 {
     int interface = 0;
-    if (tableController->staticTable[*lookUpPrefix >> 8] & 0x8000 == 0) {
+    if ((tableController->staticTable[*lookUpPrefix >> 8] & 0x8000) == 0) {
         interface = tableController->staticTable[*lookUpPrefix >> 8];
-        accessedTables = 1;
+        *accessedTables = 1;
     } else {
-        accessedTables = 2;
+        *accessedTables = 2;
         interface = tableController->dynamicTable[((tableController->staticTable[*lookUpPrefix >> 8]) & 0x7FFF) * 256 + (*lookUpPrefix & 0xFF)];
     }
     return interface;
+}
+
+void createTable(table_controller_t *tableController)
+{
+    static unsigned short table1[STATIC_TABLE_LEN];
+    // for (int i = 0; i < STATIC_TABLE_LEN; i++) table1[i] = 0;
+    
+    memcpy(&tableController->staticTable, table1, sizeof(table1));
+    tableController->dynamicTable = calloc(1, sizeof(unsigned short));
+    tableController->dynamicExtensions = 0;
 }
