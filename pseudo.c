@@ -37,7 +37,9 @@ int main(int argc, char const *argv[])
     // Init controller
     *tableController->staticTable = staticTable;
     *tableController->dynamicTable = calloc(1, sizeof(unsigned short));
-    memset(tableController->dynamicExtensions, 0, 1);
+    tableController->dynamicExtensions = 0;
+
+    // memset(tableController->dynamicExtensions, 0, 1);
 
     while (errorID = readFIBLine(prefix, prefixLength, outInterface) == 0) { // while no error or EOF
         fillTable(tableController, prefix, prefixLength, outInterface);
