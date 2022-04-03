@@ -69,7 +69,7 @@ int lookUpInterface(table_controller_t *tableController, uint32_t *lookUpPrefix,
     return interface;
 }
 
-void createTable(table_controller_t *tableController)
+unsigned short *createTable(table_controller_t *tableController)
 {
     static unsigned short table1[STATIC_TABLE_LEN];
     // for (int i = 0; i < STATIC_TABLE_LEN; i++) table1[i] = 0;
@@ -77,4 +77,6 @@ void createTable(table_controller_t *tableController)
     memcpy(&tableController->staticTable, table1, sizeof(table1));
     tableController->dynamicTable = calloc(1, sizeof(unsigned short));
     tableController->dynamicExtensions = 0;
+
+    return tableController->dynamicTable;
 }
