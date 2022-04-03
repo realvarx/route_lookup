@@ -18,6 +18,6 @@ int fillTable(table_controller_t *tableController, uint32_t *prefix,
 int lookUpInterface(table_controller_t *tableController, 
                 uint32_t *lookUpPrefix, int *accessedTables);
 
-unsigned short *createTable(table_controller_t *tableController);
+void createTable(table_controller_t *tableController);
 
 #endif

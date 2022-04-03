@@ -9,10 +9,9 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include <arpa/inet.h>
+// #include <arpa/inet.h>
 
 table_controller_t tableController;
-unsigned short *dynamicTablePtr;
 
 uint32_t *prefix;
 int *prefixLength;
@@ -23,7 +22,7 @@ int *accessedTables;
 
 double *searchingTime;
 
-void freeResources();
+void freeResources(table_controller_t *tableController);
 
 int main(int argc, char *argv[])
 {
@@ -73,15 +72,15 @@ int main(int argc, char *argv[])
     // printf("Accesses counter %d\n", accessesCounter);
 
     printSummary(processedCounter, (double)((double)accessesCounter / (double)processedCounter), (double)(timeCounter / processedCounter));
-    freeResources();
+    freeResources(&tableController);
 
     exit(EXIT_SUCCESS);
 }
 
-void freeResources()
+void freeResources(table_controller_t *tableController)
 {
     freeIO();
-    free(dynamicTablePtr);
+    free(tableController->dynamicTable);
     free(prefix);
     free(prefixLength);
     free(outInterface);
